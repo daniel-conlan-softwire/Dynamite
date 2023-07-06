@@ -1,11 +1,24 @@
-const SOS_TAG = "";
-const EOS_TAG = "";
+const SOS_TAG = "<>";
+const EOS_TAG = "</>";
 
-function getTransitionProbs() {
+function getTransitionProbs(trainingData: any, tagSet: any) {
+
+    let tLogProbs: any = {};
+    for (let moves of tagSet) tLogProbs[moves] = 0;
+
+    for (let round of trainingData) {
+        tLogProbs[round.moves]++;
+    }
+
+    for (let moves in tLogProbs) {
+        tLogProbs[moves] = (tLogProbs+1) / (tLogProbs. tagSet.length)
+    }
+
+    return tLogProbs;
 
 }
 
-function getEmissionProbs() {
+function getEmissionProbs(trainingData: any) {
 
 }
 
