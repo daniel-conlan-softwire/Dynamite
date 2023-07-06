@@ -1,0 +1,29 @@
+# Don't use Water if Opponent ran out of dynamite
+
+
+# If just used N=1 waterbombs, use dynamite
+
+
+# If we have a bunch of "simple" bots (and none perform significantly better than the other), then we can split the game to (say 200) rounds 
+# and switch to a different strategy based on the aggregate data of the previoud round (e.g. if opponent does mostly scissors, then switch to rockbot next)
+
+
+# (Can set N number of waterbombs based on data from previous rounds)
+
+
+# Assign weights to each possible moves (e.g. for random)
+
+
+# CONSIDER ROLL OVER
+
+
+# Keep track of roll over 
+
+
+# How to decide when to waterbomb or dynamite on round with bonus rollover points?
+
+
+# Rollover response depends on how much dynamite the enemy has left (weight probability with that)
+
+
+# Offensive -> dynamite, defensive -> water bomb, going for the draw -> rock paper scissors 

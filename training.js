@@ -1,4 +1,4 @@
-! function(e) {
+! function (e) {
     var t = {};
 
     function r(o) {
@@ -10,40 +10,40 @@
         };
         return e[o].call(s.exports, s, s.exports, r), s.l = !0, s.exports
     }
-    r.m = e, r.c = t, r.d = function(e, t, o) {
+    r.m = e, r.c = t, r.d = function (e, t, o) {
         r.o(e, t) || Object.defineProperty(e, t, {
             enumerable: !0,
             get: o
         })
-    }, r.r = function(e) {
+    }, r.r = function (e) {
         "undefined" != typeof Symbol && Symbol.toStringTag && Object.defineProperty(e, Symbol.toStringTag, {
             value: "Module"
         }), Object.defineProperty(e, "__esModule", {
             value: !0
         })
-    }, r.t = function(e, t) {
+    }, r.t = function (e, t) {
         if (1 & t && (e = r(e)), 8 & t) return e;
         if (4 & t && "object" == typeof e && e && e.__esModule) return e;
         var o = Object.create(null);
         if (r.r(o), Object.defineProperty(o, "default", {
-                enumerable: !0,
-                value: e
-            }), 2 & t && "string" != typeof e)
-            for (var s in e) r.d(o, s, function(t) {
+            enumerable: !0,
+            value: e
+        }), 2 & t && "string" != typeof e)
+            for (var s in e) r.d(o, s, function (t) {
                 return e[t]
             }.bind(null, s));
         return o
-    }, r.n = function(e) {
-        var t = e && e.__esModule ? function() {
+    }, r.n = function (e) {
+        var t = e && e.__esModule ? function () {
             return e.default
-        } : function() {
+        } : function () {
             return e
         };
         return r.d(t, "a", t), t
-    }, r.o = function(e, t) {
+    }, r.o = function (e, t) {
         return Object.prototype.hasOwnProperty.call(e, t)
     }, r.p = "", r(r.s = 4)
-}([function(e, t) {
+}([function (e, t) {
     e.exports = {
         BotError: class extends Error {
             constructor(e, t, r) {
@@ -61,7 +61,7 @@
             }
         }
     }
-}, function(e, t, r) {
+}, function (e, t, r) {
     const {
         BotError: o
     } = r(0), s = ["R", "P", "S", "W", "D"];
@@ -128,7 +128,7 @@
             return Promise.all([this.runnerClient1.deleteInstance(this.instanceIds[1]), this.runnerClient2.deleteInstance(this.instanceIds[2])])
         }
     }
-}, function(e, t, r) {
+}, function (e, t, r) {
     const o = r(1);
 
     function s(e, t, r) {
@@ -150,7 +150,7 @@
             errorReason: "startupError"
         }
     }
-    e.exports = function(e, t, r, n, a, i) {
+    e.exports = function (e, t, r, n, a, i) {
         return r.createInstance(e).then(c => n.createInstance(t).then(s => (s => {
             const i = new o(s, r, n, a);
             return i.play().then(r => (i.deleteBots(), r.botIds = {
@@ -159,9 +159,9 @@
             }, r))
         })([c, s]), o => (i.error(`Error creating bot ${t}: \n${o.stack || ""}`), r.deleteInstance(c), s(e, t, 2)))).catch(r => (i.error(`Error creating bot ${e}: ${r}\n${r.stack || ""}`), s(e, t, 1)))
     }
-}, function(e, t) {
+}, function (e, t) {
     e.exports = require("fs")
-}, function(module, exports, __webpack_require__) {
+}, function (module, exports, __webpack_require__) {
     const fs = __webpack_require__(3),
         play = __webpack_require__(2);
     (process.argv[4] && isNaN(process.argv[4]) || process.argv[5] && isNaN(process.argv[5]) || process.argv[6] && isNaN(process.argv[6]) || process.argv.length < 4) && (console.log("Specify 2 arguments with the file path to the bots:"), console.log("\n\tnode dynamite-cli.js myBot1.js myBot2.js\n"), console.log("You may also optionally specify the number of matches, score to win, and number of dynamite (in that order)"), console.log("\n\tnode dynamite-cli.js myBot1.js myBot2.js 10 1000 100\n"), process.exit(1));
@@ -216,8 +216,88 @@
 
     function playGames(e) {
         e > 0 && play(1, 2, cliRunnerClient, cliRunnerClient, options, console).then(t => {
-            console.log(`Game ${options.games - e + 1} results:`), console.log(`Winner: p${t.winner}`), console.log(`Score: ${t.score[1]} - ${t.score[2]}`), console.log(`Reason: ${t.reason}`), t.errorBot && console.log(`Player ${t.errorBot} failed:\n${t.errorStack}`), playGames(e - 1)
+            console.log(getTrainingData(t.gamestate))
         }).catch(e => console.error("UNEXPECTED ERROR:", e))
     }
     playGames(options.games)
 }]);
+
+function getTrainingData(gamestate) {
+
+    let trainingData = [];
+
+    for (let round of gamestate.rounds) {
+        let data = {}
+
+        data.moves = round.p1 + round.p2;
+        data.result = resultOfRound(round);
+
+        trainingData.push(data);
+    }
+
+    return trainingData;
+
+}
+
+function resultOfRound(round) {
+
+    switch (round.p1) {
+        case 'R':
+            switch (round.p2) {
+                case 'R':
+                    return 'd';
+                case 'P':
+                case 'D':
+                    return 'l'
+                case 'S':
+                case 'W':
+                    return 'w'
+            }
+        case 'P':
+            switch (round.p2) {
+                case 'P':
+                    return 'd';
+                case 'S':
+                case 'D':
+                    return 'l';
+                case 'R':
+                case 'W':
+                    return 'w';
+            }
+        case 'S':
+            switch (round.p2) {
+                case 'S':
+                    return 'd';
+                case 'R':
+                case 'D':
+                    return 'l';
+                case 'P':
+                case 'W':
+                    return 'w';
+
+            }
+        case 'W':
+            switch (round.p2) {
+                case 'W':
+                    return 'd';
+                case 'R':
+                case 'P':
+                case 'S':
+                    return 'l';
+                case 'D':
+                    return 'w';
+            }
+        case 'D':
+            switch (round.p2) {
+                case 'R':
+                case 'P':
+                case 'S':
+                    return 'w'
+                case 'W':
+                    return 'l';
+                case 'D':
+                    return 'd';
+            }
+    }
+
+}
