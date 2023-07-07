@@ -18,10 +18,12 @@
 //             const choice = this.pickRandomFrom(['R', 'P', 'S', 'W', 'D']);
 //             if (choice === 'D') this.dynamiteCount--;
             
+
 //             return choice;
 //         } else {
-//             return this.pickRandomFrom(['R', 'P', 'S', 'W']);
+//             return this.pickRandomFrom(['R', 'P', 'S']);
 //         }
+
 
 //     }
 // }
