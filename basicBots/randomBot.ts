@@ -1,29 +1,29 @@
 
 
-class RandomBot {
+// class RandomBot {
 
-    dynamiteCount: number;
+//     dynamiteCount: number;
 
-    constructor() {
-        this.dynamiteCount = 100;
-    }
+//     constructor() {
+//         this.dynamiteCount = 100;
+//     }
 
-    pickRandomFrom(array: string[]) {
-        return array[Math.floor(Math.random() * array.length)];
-    }
+//     pickRandomFrom(array: string[]) {
+//         return array[Math.floor(Math.random() * array.length)];
+//     }
 
-    makeMove(gamestate: any) {
+//     makeMove(gamestate: any) {
 
-        if (this.dynamiteCount > 0) {
-            const choice = this.pickRandomFrom(['R', 'P', 'S', 'W', 'D']);
-            if (choice === 'D') this.dynamiteCount--;
+//         if (this.dynamiteCount > 0) {
+//             const choice = this.pickRandomFrom(['R', 'P', 'S', 'W', 'D']);
+//             if (choice === 'D') this.dynamiteCount--;
             
-            return choice;
-        } else {
-            return this.pickRandomFrom(['R', 'P', 'S', 'W']);
-        }
+//             return choice;
+//         } else {
+//             return this.pickRandomFrom(['R', 'P', 'S', 'W']);
+//         }
 
-    }
-}
+//     }
+// }
 
-module.exports = new RandomBot();
+// module.exports = new RandomBot();

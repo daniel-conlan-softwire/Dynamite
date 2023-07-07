@@ -1,0 +1,39 @@
+Our BOT Should: 
+
+# Have some hard coded rules that it should ALWAYS obey 
+    1. Once the enemy has used dynamite 100 times, no longer use water balloon 
+    2. Cap the number of our dynamite usage at 99, to bait them into using water balloon 
+
+# Have an evaluation system every N rounds 
+    1. After N rounds, run a function that returns some game statistics 
+    2. These should return how well the current model is working 
+    3. If the model is winning below a certain threshold, consider changing to a different strategy
+    4. The different strategy could be the same model with different parameters, or just a different (e.g. rule based) model
+
+# Mainly based on HMM 
+    1. Hidden States = {'XY'} where X is the move played by P1 (us) and Y is the move played by P2 (enemy)
+    2. Observed symbols = {W, L, D}
+    3. Training Data = based on a mixture of our bots playing against each other 
+    4. Input Sequence = A window of symbols as observed sequence
+    5. Predicted symbol = Match it with the predicted hidden states that match the moves made in previous rounds 
+
+
+
+
+# Strategies:
+
+1. Start with a strict strategy 
+2. Play the second half responsively 
+
+# To Consider: 
+
+1. Offensive or Defensive 
+    - When are we using dynamite 
+        - RPS for N=5 rollover and then dynamite 
+    - When are we using water balloon 
+        - never? 
+    - What do we do when there is a rollover 
+
+2. Have our bot 
+
+

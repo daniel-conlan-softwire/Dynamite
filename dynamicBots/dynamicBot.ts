@@ -1,73 +1,127 @@
-import { dynamiteBot } from "../basicBots/dynamiteBot";
-import { randomBot } from "../basicBots/randomBot";
-import { beatLastMoveBot } from "../copyBasedBots/beatLastMoveBot";
+interface GameState {
+  rounds: Round[];
+}
 
-class Bots {} // all other bots should extend from this (can also be an interface)
+interface Round {
+  p1: string;
+  p2: string;
+}
 
-class Statistics{
+class Bot {
+  dynamiteCount: number;
+  enemyDynamiteCount: number;
+  currentStrategy: Bot;
+  allStrategies: Bot[];
+  availableMoves: string[];
+  rollover: number;
+  scoreDifference: number;
 
-    getData(gamestate: any){
+  constructor() {
+    this.dynamiteCount = 99;
+    this.enemyDynamiteCount = 100;
+    this.allStrategies = [new RandomBot(), new CopyLastMoveBot(), new BeatLastMoveBot(), new HMMBot()];
+    this.currentStrategy = this.allStrategies[0];
+    this.availableMoves = ["R", "P", "S", "W", "D"];
+    this.rollover = 0;
+    this.scoreDifference = 0;
+  }
 
-        let enemyDynamiteCount: number = 0;
-        let enemyConsecutiveWaterCount: number = 0;
-        let enemyConsecutiveDynamiteCount: number = 0;
-        let wonAgainstRockCount: number = 0;
-        let wonAgainstPaperCount:number = 0;
-        let wonAgainstScissorsCount: number = 0;
-        let wonAgainstDynamiteCount: number = 0;
-        let wonAgainstWaterCount: number = 0;
-        let lostAgainstRockCount: number = 0;
-        let lostAgainstPaperCount:number = 0;
-        let lostAgainstScissorsCount: number = 0;
-        let lostAgainstDynamiteCount: number = 0;
-        let lostAgainstWaterCount: number = 0;
+  updateAvailableMoves( // TODO: rename
+    movePlayedLastRound: string,
+    enemyMovePlayedLastRound: string,
+  )  {
 
-        for (const thisRound of gamestate.rounds){
-            const p1Move = thisRound.p1;
-            const p2Move = thisRound.p2;
-            if (p2Move === 'R') {
-                if (['P', 'D'].includes(p1Move)) {
-                    wonAgainstRockCount++;
-                } else {
-                    lostAgainstRockCount++;
-                }
-            } else if (p2Move === 'P') {
-                if (['S','D'].includes(p1Move)) {
-                    wonAgainstPaperCount++;
-                } else {
-                    lostAgainstPaperCount++;
-                }
-            } else if (p2Move === 'S') {
-                if (['R','D'].includes(p1Move)) {
-                    wonAgainstScissorsCount++;
-                } else {
-                    lostAgainstScissorsCount++;
-                }
-            } else if (p2Move === 'D') {
-                if (['W'].includes(p1Move)) {
-                    wonAgainstDynamiteCount++;
-                } else {
-                    lostAgainstDynamiteCount++;
-                }
-            } else if (p2Move === 'W') {
-                if (['R','P','S'].includes(p1Move)) {
-                    wonAgainstWaterCount++;
-                } else {
-                    lostAgainstWaterCount++;
-                }
-            }
-        }        
+    this.availableMoves = ["R", "P", "S", "W", "D"];
 
+    if (movePlayedLastRound === "D") {
+      this.dynamiteCount -= 1;
+    }
+
+    if (enemyMovePlayedLastRound === "D") {
+      this.enemyDynamiteCount -= 1;
+    }
+
+    if (this.dynamiteCount === 0) {
+      this.availableMoves = this.availableMoves.filter((m) => m !== "D");
+    }
+
+    if (this.rollover < 1 || this.enemyDynamiteCount < 40) { // TODO: this is a threshold to be set
+        this.availableMoves = this.availableMoves.filter((m) => m !== "W");
+    } 
+  }
+
+  pickRandomFrom(array: (string|Bot) []): any { // TODO: implement some weights (could be static or dynamic)
+    return array[Math.floor(Math.random() * array.length)];
+  }
+
+  switchStrategy() {
+    if (this.scoreDifference >= 50) { // TODO: this is a threshold to be set (make obvious we are losing 50) (implement round buffer) (use number of consecutive loses instead)
+        this.currentStrategy = this.pickRandomFrom(this.allStrategies); // TODO: exclude the current strategy
+    }
+  }
+
+  makeMove(gamestate: GameState): string {
+
+    this.switchStrategy();
+
+    if (gamestate.rounds.length > 0) {
+      const lastRound = gamestate.rounds[gamestate.rounds.length - 1];
+      this.updateAvailableMoves(lastRound.p1, lastRound.p2);
+    }
+    return this.currentStrategy.makeMove(gamestate);
+  }
+}
+
+class RandomBot extends Bot {
+
+  makeMove(gamestate: GameState): string {
+    return this.pickRandomFrom(this.availableMoves);
+  }
+
+}
+
+class CopyLastMoveBot extends Bot {
+
+makeMove(gamestate: GameState): string {
+    return gamestate.rounds[gamestate.rounds.length - 1].p2;
+}
+
+}
+
+class BeatLastMoveBot extends Bot {
+
+    getMovesThatBeat(move:string): string[] {
+        switch (move) {
+            case 'R' :
+                return ['P', 'D'];
+            case 'P' :
+                return ['S', 'D'];
+            case 'S' : 
+                return ['R', 'D'];
+            case 'W' : 
+                return ['R', 'P', 'S'];
+            case 'D' : 
+                return ['W'];
+            default :
+                return ['R', 'P', 'S', 'W', 'D'];
+        }
+    }
+
+    makeMove(gamestate: GameState): string {
+        
+        const lastMove = gamestate.rounds[gamestate.rounds.length-1].p2;
+        const movesThatBeat = this.getMovesThatBeat(lastMove).filter((m) => this.availableMoves.includes(m));
+
+        if (movesThatBeat.length > 0) {
+            return this.pickRandomFrom(movesThatBeat);
+        }
+
+        return this.pickRandomFrom(['R', 'P', 'S']);
     }
 }
 
-class dynamicBot {
-
-    allStrategyBots: Bots[]
-    gameStatistics: Statistics;
-
-    constructor () {
-        this.allStrategyBots = []; 
-    }
-
+class HMMBot extends Bot {
+    
 }
+
+module.exports = new Bot()
