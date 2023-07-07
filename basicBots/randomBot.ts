@@ -20,7 +20,7 @@ class RandomBot {
             
             return choice;
         } else {
-            return this.pickRandomFrom(['R', 'P', 'S', 'W']);
+            return this.pickRandomFrom(['R', 'P', 'S']);
         }
 
     }

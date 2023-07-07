@@ -216,11 +216,41 @@
 
     function playGames(e) {
         e > 0 && play(1, 2, cliRunnerClient, cliRunnerClient, options, console).then(t => {
-            console.log(getTrainingData(t.gamestate))
+            console.log(JSON.stringify(getEmissionProbs(getTrainingData(t.gamestate), TAG_SET)))
         }).catch(e => console.error("UNEXPECTED ERROR:", e))
     }
     playGames(options.games)
 }]);
+
+var SOS_TAG = '<>';
+var EOS_TAG = '</>';
+
+var TAG_SET = [
+    "RR",
+    "RP",
+    "RS",
+    "RW",
+    "RD",
+    "PR",
+    "PP",
+    "PS",
+    "PW",
+    "PD",
+    "SR",
+    "SP",
+    "SS",
+    "SW",
+    "SD",
+    "WR",
+    "WP",
+    "WS",
+    "WW",
+    "WD",
+    "DR",
+    "DP",
+    "DS",
+    "DW",
+    "DD"]
 
 function getTrainingData(gamestate) {
 
@@ -300,4 +330,73 @@ function resultOfRound(round) {
             }
     }
 
+}
+
+function getTransitionProbs(trainingData, tagSetNoSpecial) {
+    var tagSet = [SOS_TAG, EOS_TAG];
+    for (var _i = 0, tagSetNoSpecial_1 = tagSetNoSpecial; _i < tagSetNoSpecial_1.length; _i++) {
+        var tag = tagSetNoSpecial_1[_i];
+        tagSet.push(tag);
+    }
+    // -- Initialise Transitions Data Structures -- //
+    var tLogProbs = {};
+    var transitionCounts = {};
+    for (var _a = 0, tagSet_1 = tagSet; _a < tagSet_1.length; _a++) {
+        var moves = tagSet_1[_a];
+        tLogProbs[moves] = 0;
+    }
+    for (var _b = 0, tagSet_2 = tagSet; _b < tagSet_2.length; _b++) {
+        var moves = tagSet_2[_b];
+        var freqDist = {};
+        for (var _c = 0, tagSet_3 = tagSet; _c < tagSet_3.length; _c++) {
+            var moves_1 = tagSet_3[_c];
+            freqDist[moves_1] = 1;
+        }
+        tLogProbs[moves] = freqDist;
+        transitionCounts[moves] = tagSet.length;
+    }
+    // -- Determine Frequencies -- //
+    for (var i = 0; i < trainingData.length - 1; i++) {
+        var moves = trainingData[i].moves;
+        var nextMoves = trainingData[i + 1].moves;
+        tLogProbs[moves][nextMoves]++;
+        transitionCounts[moves]++;
+    }
+    // -- Return Smoothed Transition Probabilities -- //
+    for (var moves in tLogProbs) {
+        for (var nextMoves in tLogProbs) {
+            tLogProbs[moves][nextMoves] = Math.log(tLogProbs[moves][nextMoves] / transitionCounts[moves]);
+        }
+    }
+    return tLogProbs;
+}
+function getEmissionProbs(trainingData, tagSet) {
+    // -- Initialise Emissions Data Structures -- //
+    var eLogProbs = {};
+    var emissionCounts = {};
+    for (var _i = 0, tagSet_4 = tagSet; _i < tagSet_4.length; _i++) {
+        var moves = tagSet_4[_i];
+        var freqDist = {};
+        for (var _a = 0, _b = ['w', 'd', 'l']; _a < _b.length; _a++) {
+            var result = _b[_a];
+            freqDist[result] = 1;
+        }
+        eLogProbs[moves] = freqDist;
+        emissionCounts[moves] = 0;
+    }
+    // -- Determine Frequencies of Moves Emissions -- //
+    for (var i = 0; i < trainingData.length; i++) {
+        var moves = trainingData[i].moves;
+        var result = trainingData[i].result;
+        eLogProbs[moves][result]++;
+        emissionCounts[moves]++;
+    }
+    // -- Return Smoothed Transition Probabilities -- //
+    for (var moves in eLogProbs) {
+        for (var _c = 0, _d = ['w', 'l', 'd']; _c < _d.length; _c++) {
+            var result = _d[_c];
+            eLogProbs[moves][result] = Math.log(eLogProbs[moves][result] / emissionCounts[moves]);
+        }
+    }
+    return eLogProbs;
 }
