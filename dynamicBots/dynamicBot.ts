@@ -7,35 +7,51 @@ interface Round {
   p2: string;
 }
 
-class Bot {
+abstract class Bot {
   dynamiteCount: number;
   enemyDynamiteCount: number;
-  currentStrategy: Bot;
-  allStrategies: Bot[];
   availableMoves: string[];
   rollover: number;
-  scoreDifference: number;
+  consecutiveLosses: number;
+  enemyScore: number;
+  roundNumber: number;
 
   constructor() {
     this.dynamiteCount = 99;
     this.enemyDynamiteCount = 100;
-    this.allStrategies = [
-      new RandomBot(),
-      new CopyLastMoveBot(),
-      new BeatLastMoveBot(),
-      new HMMBot(),
-    ];
-    this.currentStrategy = this.allStrategies[0];
     this.availableMoves = ["R", "P", "S", "W", "D"];
     this.rollover = 0;
-    this.scoreDifference = 0;
+    this.consecutiveLosses = 0;
+    this.enemyScore = 0;
+    this.roundNumber = 0;
   }
 
   updateBeforeRound(
     movePlayedLastRound: string,
     enemyMovePlayedLastRound: string
   ) {
-    this.availableMoves = ["R", "P", "S", "W", "D"];
+    this.roundNumber++; // starts from 1
+
+    switch (
+      this.resultOfRound({
+        p1: movePlayedLastRound,
+        p2: enemyMovePlayedLastRound,
+      })
+    ) {
+      case "w":
+        this.consecutiveLosses = 0;
+        this.rollover = 0;
+      case "d":
+        this.consecutiveLosses = 0;
+        this.rollover++;
+        break;
+      case "l":
+      default:
+        this.consecutiveLosses++;
+        this.enemyScore += 1 + this.rollover;
+        this.rollover = 0;
+        break;
+    }
 
     if (movePlayedLastRound === "D") {
       this.dynamiteCount -= 1;
@@ -45,91 +61,30 @@ class Bot {
       this.enemyDynamiteCount -= 1;
     }
 
+    this.availableMoves = ["R", "P", "S", "D"];
+
+    if (this.enemyScore > 500 || this.roundNumber > 2000) {
+        this.availableMoves.push('D');
+    }
+
+    if (this.rollover >= 1) {
+        if (this.enemyDynamiteCount > 40) {
+            this.availableMoves.push('W');
+        }
+        this.availableMoves.push('D')
+    }
+
+    if (this.rollover >= 1 && this.enemyDynamiteCount > 40) { // TODO: this is a threshold to be set
+      this.availableMoves.push('W');
+    } 
+
     if (this.dynamiteCount === 0) {
-      this.availableMoves = this.availableMoves.filter((m) => m !== "D");
-    }
+        this.availableMoves = this.availableMoves.filter((m) => m !== "D");
+      }
+    
 
-    if (this.rollover < 1 || this.enemyDynamiteCount < 40) {
-      // TODO: this is a threshold to be set
-      this.availableMoves = this.availableMoves.filter((m) => m !== "W");
-    }
   }
 
-  pickRandomFrom(array: (string | Bot)[]): any {
-    // TODO: implement some weights (could be static or dynamic)
-    // Can split this into 2 different methods: one for switching BOTs the other for choosing Moves 
-    // Can assign weights based on how well the BOT has done previously (but might have too little data)
-    // Can assign more weight to dynamite during rollover 
-    return array[Math.floor(Math.random() * array.length)];
-  }
-
-//   switchStrategy() {
-//     if (this.scoreDifference >= 50) {
-//       // TODO: this is a threshold to be set (make obvious we are losing 50) (implement round buffer) (use number of consecutive loses instead)
-//       this.currentStrategy = this.pickRandomFrom(this.allStrategies); // TODO: exclude the current strategy
-//     }
-//   }
-
-  makeMove(gamestate: GameState): string {
-    // this.switchStrategy();
-
-    if (gamestate.rounds.length > 0) {
-      const lastRound = gamestate.rounds[gamestate.rounds.length - 1];
-      this.updateBeforeRound(lastRound.p1, lastRound.p2);
-    }
-    return this.currentStrategy.makeMove(gamestate);
-  }
-}
-
-
-class RandomBot extends Bot {
-  makeMove(gamestate: GameState): string {
-    return this.pickRandomFrom(this.availableMoves);
-  }
-}
-
-
-class CopyLastMoveBot extends Bot {
-  makeMove(gamestate: GameState): string {
-    return gamestate.rounds[gamestate.rounds.length - 1].p2;
-  }
-}
-
-
-class BeatLastMoveBot extends Bot {
-  getMovesThatBeat(move: string): string[] {
-    switch (move) {
-      case "R":
-        return ["P", "D"];
-      case "P":
-        return ["S", "D"];
-      case "S":
-        return ["R", "D"];
-      case "W":
-        return ["R", "P", "S"];
-      case "D":
-        return ["W"];
-      default:
-        return ["R", "P", "S", "W", "D"];
-    }
-  }
-
-  makeMove(gamestate: GameState): string {
-    const lastMove = gamestate.rounds[gamestate.rounds.length - 1].p2;
-    const movesThatBeat = this.getMovesThatBeat(lastMove).filter((m) =>
-      this.availableMoves.includes(m)
-    );
-
-    if (movesThatBeat.length > 0) {
-      return this.pickRandomFrom(movesThatBeat);
-    }
-
-    return this.pickRandomFrom(["R", "P", "S"]);
-  }
-}
-
-
-class HMMBot extends Bot {
   resultOfRound(round: Round): string {
     switch (round.p1) {
       case "R":
@@ -192,6 +147,109 @@ class HMMBot extends Bot {
     }
   }
 
+  pickRandomFrom(array: (string | Bot)[]): any {
+    // TODO: implement some weights (could be static or dynamic)
+    // Can split this into 2 different methods: one for switching BOTs the other for choosing Moves
+    // Can assign weights based on how well the BOT has done previously (but might have too little data)
+    // Can assign more weight to dynamite during rollover
+    return array[Math.floor(Math.random() * array.length)];
+  }
+
+  makeMove(gamestate: GameState): string {
+    return "";
+  } //check for bugs
+
+  makeMoveOnAvailableMoves(gamestate: GameState, availableMoves: string[]) {
+    this.availableMoves = availableMoves;
+    return this.makeMove(gamestate);
+  }
+}
+
+class OurBot extends Bot {
+  allStrategies: Bot[];
+  currentStrategy: Bot;
+
+  constructor() {
+    super();
+    this.allStrategies = [
+      new HMMBot(),
+      new RandomBot(),
+      new BeatLastMoveBot(),
+    ];
+    this.currentStrategy = this.allStrategies[0];
+  }
+
+  switchStrategy() {
+    if (this.consecutiveLosses >= 3) {
+        
+      this.currentStrategy = this.pickRandomFrom(
+        this.allStrategies.filter(
+          (strategy) => strategy !== this.currentStrategy
+        )
+      );
+
+      this.consecutiveLosses = 0;
+    }
+  }
+
+  makeMove(gamestate: GameState): string {
+    this.switchStrategy();
+
+    if (gamestate.rounds.length > 0) {
+      const lastRound = gamestate.rounds[gamestate.rounds.length - 1];
+      this.updateBeforeRound(lastRound.p1, lastRound.p2);
+    }
+    return this.currentStrategy.makeMoveOnAvailableMoves(
+      gamestate,
+      this.availableMoves
+    );
+  }
+}
+
+class RandomBot extends Bot {
+  makeMove(gamestate: GameState): string {
+    return this.pickRandomFrom(this.availableMoves);
+  }
+}
+
+class CopyLastMoveBot extends Bot {
+  makeMove(gamestate: GameState): string {
+    return gamestate.rounds[gamestate.rounds.length - 1].p2;
+  }
+}
+
+class BeatLastMoveBot extends Bot {
+  getMovesThatBeat(move: string): string[] {
+    switch (move) {
+      case "R":
+        return ["P", "D"];
+      case "P":
+        return ["S", "D"];
+      case "S":
+        return ["R", "D"];
+      case "W":
+        return ["R", "P", "S"];
+      case "D":
+        return ["W"];
+      default:
+        return ["R", "P", "S", "W", "D"];
+    }
+  }
+
+  makeMove(gamestate: GameState): string {
+    const lastMove = gamestate.rounds[gamestate.rounds.length - 1].p2;
+    const movesThatBeat = this.getMovesThatBeat(lastMove)
+    this.availableMoves = this.availableMoves.filter((m) => movesThatBeat.includes(m));
+
+    if (this.availableMoves.length > 0) {
+      return this.pickRandomFrom(this.availableMoves);
+    }
+
+    return this.pickRandomFrom(["R", "P", "S"]);
+  }
+}
+
+class HMMBot extends Bot {
   getResultHistory(gamestate: GameState): string[] {
     let resultHistory = [];
 
@@ -309,7 +367,7 @@ class HMMBot extends Bot {
   }
 }
 
-module.exports = new Bot();
+module.exports = new OurBot();
 
 const SOS_TAG = '<>';
 const EOS_TAG = '</>';
