@@ -31,8 +31,7 @@ class Bot {
     this.scoreDifference = 0;
   }
 
-  updateAvailableMoves(
-    // TODO: rename
+  updateBeforeRound(
     movePlayedLastRound: string,
     enemyMovePlayedLastRound: string
   ) {
@@ -58,26 +57,30 @@ class Bot {
 
   pickRandomFrom(array: (string | Bot)[]): any {
     // TODO: implement some weights (could be static or dynamic)
+    // Can split this into 2 different methods: one for switching BOTs the other for choosing Moves 
+    // Can assign weights based on how well the BOT has done previously (but might have too little data)
+    // Can assign more weight to dynamite during rollover 
     return array[Math.floor(Math.random() * array.length)];
   }
 
-  switchStrategy() {
-    if (this.scoreDifference >= 50) {
-      // TODO: this is a threshold to be set (make obvious we are losing 50) (implement round buffer) (use number of consecutive loses instead)
-      this.currentStrategy = this.pickRandomFrom(this.allStrategies); // TODO: exclude the current strategy
-    }
-  }
+//   switchStrategy() {
+//     if (this.scoreDifference >= 50) {
+//       // TODO: this is a threshold to be set (make obvious we are losing 50) (implement round buffer) (use number of consecutive loses instead)
+//       this.currentStrategy = this.pickRandomFrom(this.allStrategies); // TODO: exclude the current strategy
+//     }
+//   }
 
   makeMove(gamestate: GameState): string {
-    this.switchStrategy();
+    // this.switchStrategy();
 
     if (gamestate.rounds.length > 0) {
       const lastRound = gamestate.rounds[gamestate.rounds.length - 1];
-      this.updateAvailableMoves(lastRound.p1, lastRound.p2);
+      this.updateBeforeRound(lastRound.p1, lastRound.p2);
     }
     return this.currentStrategy.makeMove(gamestate);
   }
 }
+
 
 class RandomBot extends Bot {
   makeMove(gamestate: GameState): string {
@@ -85,11 +88,13 @@ class RandomBot extends Bot {
   }
 }
 
+
 class CopyLastMoveBot extends Bot {
   makeMove(gamestate: GameState): string {
     return gamestate.rounds[gamestate.rounds.length - 1].p2;
   }
 }
+
 
 class BeatLastMoveBot extends Bot {
   getMovesThatBeat(move: string): string[] {
@@ -122,6 +127,7 @@ class BeatLastMoveBot extends Bot {
     return this.pickRandomFrom(["R", "P", "S"]);
   }
 }
+
 
 class HMMBot extends Bot {
   resultOfRound(round: Round): string {
